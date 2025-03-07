@@ -9,6 +9,15 @@ import (
 	"time"
 )
 
+type moveType int
+
+const (
+	moveUp moveType = iota
+	moveDown
+	moveLeft
+	moveRight
+)
+
 // snakePart is the game state
 type snakePart struct {
 	x, y float32
@@ -17,13 +26,14 @@ type snakePart struct {
 var (
 	snakeParts []snakePart
 	game       *fyne.Container
+	move       = moveUp
 )
 
 func setupGame() *fyne.Container {
 	var segments []fyne.CanvasObject
 
 	for i := 0; i < 10; i++ {
-		r := canvas.NewRectangle(color.NRGBA{0x00, 0xff, 0, 0xff})
+		r := canvas.NewRectangle(&color.RGBA{G: 0x66, A: 0xff})
 		r.Resize(fyne.NewSize(10, 10))
 		r.Move(fyne.NewPos(90, float32(50+i*10)))
 		segments = append(segments, r)
@@ -51,7 +61,32 @@ func runGame() {
 			snakeParts[i] = snakeParts[i-1]
 		}
 		snakeParts[0].y--
+
+		switch move {
+		case moveUp:
+			snakeParts[0].y--
+		case moveDown:
+			snakeParts[0].y++
+		case moveLeft:
+			snakeParts[0].x--
+		case moveRight:
+			snakeParts[0].x++
+		}
 		refreshGame()
+	}
+}
+
+func keyTyped(e *fyne.KeyEvent) {
+	switch e.Name {
+	case fyne.KeyUp:
+		move = moveUp
+
+	case fyne.KeyDown:
+		move = moveDown
+	case fyne.KeyLeft:
+		move = moveLeft
+	case fyne.KeyRight:
+		move = moveRight
 	}
 }
 
@@ -59,10 +94,13 @@ func main() {
 	a := app.New()
 
 	w := a.NewWindow("Snake")
-	game = setupGame()
-	w.SetContent(game)
-	go runGame()
 	w.Resize(fyne.NewSize(200, 200))
 	w.SetFixedSize(true)
+
+	game = setupGame()
+	w.SetContent(game)
+	w.Canvas().SetOnTypedKey(keyTyped)
+
+	go runGame()
 	w.ShowAndRun()
 }
